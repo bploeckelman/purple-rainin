@@ -1,74 +1,72 @@
 'use strict';
 
-import React from "react";
+import React, {useState} from "react";
 import ReactDOM from "react-dom";
+import {useDropzone} from "react-dropzone";
 import './main.css'
 
-class App extends React.Component {
+function App(props) {
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      file: '',
-      data: '',
-      isLoaded: false
-    };
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-  }
+  const [fileData, setFileData] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  componentDidMount() {
-  }
+  // TODO: limit accepted files to just one
+  const {acceptedFiles, getRootProps, getInputProps} = useDropzone();
+  const files = acceptedFiles.map(file => (
+    <li key={file.path}>
+      {file.path} - {file.size} bytes
+    </li>
+  ));
 
-  handleChange(event) {
-    this.setState({file: event.target.file});
-  }
-
-  handleSubmit(event) {
+  const handleSubmit = (event) => {
     event.preventDefault();
-    console.log(`a file was submitted: ${this.state.file}`);
+    // TODO: upload the file to the backend and get a result back
+    acceptedFiles.forEach(file => {
+      console.log(`Uploading file: ${file.path}`)
+    });
     fetch('/', { method: 'POST' })
       .catch(error => console.error("Request error", error))
       .then(response => response.text())
       .then(data => {
-        this.setState({
-          data: data,
-          isLoaded: true
-        })
+        setFileData(data);
+        setIsLoaded(true);
       });
-  }
+  };
 
-  render() {
-    return (
-      <div id="container">
+  return (
+    <section id="container">
 
-        {this.state.isLoaded &&
-          <div className="item left">
-            <h3>plate data</h3>
-            <pre>${this.state.data}</pre>
-          </div>
-        }
-        {!this.state.isLoaded &&
-          <div className="item left">
-            <h3>file upload</h3>
-            <form onSubmit={this.handleSubmit}>
-              <label>
-                File
-                <input type="text" name="file" onChange={this.handleChange}/>
-              </label>
-              <input type="submit" value="Upload"/>
-            </form>
-          </div>
-        }
-
-        <div className="item right">
-          <h3>calculated results</h3>
-          <p>foo avg stddev something else</p>
+      {isLoaded &&
+        <div className="item left">
+          <h3>plate data</h3>
+          <pre>${fileData}</pre>
         </div>
+      }
+      {!isLoaded &&
+        <div className="item left">
+          <div {...getRootProps({className: 'dropzone'})}>
+            <input {...getInputProps()} />
+            <p>Drag 'n' drop some files here, or click to select files</p>
+            <aside>
+              <h3>FILES</h3>
+              <ul>{files}</ul>
+            </aside>
+          </div>
+          <div>
+            <button onClick={handleSubmit}>Upload Files</button>
+          </div>
+        </div>
+      }
 
+      <div className="item right">
+        <h3>calculated results</h3>
+        <p>
+          {isLoaded ? 'foo: avg stddev something' : '[no data]'}
+        </p>
       </div>
-    );
-  }
+
+    </section>
+  );
 
 }
 
